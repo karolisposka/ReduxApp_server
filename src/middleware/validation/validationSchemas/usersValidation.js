@@ -11,7 +11,13 @@ const loginValidation = joi.object({
     password: joi.string().min(8).required(),
 })
 
+const changePassword = joi.object({
+    currentPassword: joi.string().min(8).required(),
+    newPassword: joi.string().min(8).required(),
+})
+
 module.exports = {
     registerValidation,
-    loginValidation
+    loginValidation,
+    changePassword
 }
