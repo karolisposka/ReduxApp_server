@@ -15,7 +15,7 @@ const s3 = new S3Client(S3Config)
 router.get('/get', async(req,res) =>{
     try{
         const con = await mysql.createConnection(mysqlConfig);
-        const [data] = await con.execute(`SELECT products.id, products.title, products.description, products.category, products.image, products_prices.small, products_prices.big FROM products LEFT JOIN products_prices ON products.id = products_prices.product_id`);
+        const [data] = await con.execute(`SELECT products.*, products_prices.small, products_prices.big FROM products LEFT JOIN products_prices ON products.id = products_prices.product_id`);
         await con.end();
         if(data.length > 0){
             for(const product of data){
@@ -42,6 +42,7 @@ router.get('/product/:title', async(req,res)=>{
     
         const con = await mysql.createConnection(mysqlConfig)
         const [data] = await con.execute(`SELECT * FROM products where title=${mysql.escape(req.params.title)}`)
+        console.log(data)
         await con.end();
         res.send(data);
     }catch(err){
@@ -152,11 +153,9 @@ router.get('/get/:category', async(req,res)=>{
                         Bucket: bucketName,
                         Key: product.image,
                     }
-                    const command = new GetObjectCommand(getObjectParams);
-                    const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
-                    product.imageurl = url
-            
-
+                const command = new GetObjectCommand(getObjectParams);
+                const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+                product.imageurl = url
             }
           return  res.send(data)
         }else{
