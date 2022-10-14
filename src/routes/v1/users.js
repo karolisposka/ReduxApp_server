@@ -13,8 +13,8 @@ router.post('/register', validation(registerValidation), async(req,res)=>{
     try{
         const hashedPassword = await bcrypt.hashSync(req.body.password, 10);
         const con = await mysql.createConnection(mysqlConfig);
-        const [data] = await con.execute(`INSERT INTO users (email, password)
-        VALUES(${mysql.escape(req.body.email)}, ${mysql.escape(hashedPassword)})`);
+        const [data] = await con.execute(`INSERT INTO users (email, password, roles)
+        VALUES(${mysql.escape(req.body.email)}, ${mysql.escape(hashedPassword)}, '2001')`);
         await con.end();
         if(!data.insertId){
             return res.status(500).send({err:'something wrong with the server. Please try again later'});
@@ -32,7 +32,7 @@ router.post('/register', validation(registerValidation), async(req,res)=>{
 router.post('/login', validation(loginValidation), async(req,res)=>{
     try{
         const con = await mysql.createConnection(mysqlConfig);
-        const [data] = await con.execute(`SELECT id, password FROM users WHERE email=${mysql.escape(req.body.email)}`);
+        const [data] = await con.execute(`SELECT id, roles, password FROM users WHERE email=${mysql.escape(req.body.email)}`);
         await con.end();
         if(data.length === 0){
             return res.status(400).send({err:'Incorrect details provided'});
@@ -40,7 +40,7 @@ router.post('/login', validation(loginValidation), async(req,res)=>{
          const checkHash = bcrypt.compareSync(req.body.password, data[0].password);
         if(checkHash){
             const token = jwt.sign(data[0].id, jwtSecret);
-            return res.send(token)
+            return res.send({id:token, roles: data[0].roles})
         }
         return res.status(400).send({err:'wrong password'})
     }catch(err){
@@ -50,22 +50,17 @@ router.post('/login', validation(loginValidation), async(req,res)=>{
 });
 
 
-router.post('/changePassword', validation(changePassword), checkIfLoggedIn(), async(req,res)=>{
+router.post('/changePassword', checkIfLoggedIn(), validation(changePassword), async(req,res)=>{
     try{
-        console.log(req.body);
         const con = await mysql.createConnection(mysqlConfig);
         const [data] = await con.execute(`SELECT password FROM users WHERE id=${req.user}`)
-        console.log(data[0].password)
         if(data.length === 0){
             return res.status(500).send({err:'Something wrong with the server.Please try again later'})
         }
         const hashCheck = bcrypt.compareSync( req.body.currentPassword, data[0].password); 
-        
-        console.log(hashCheck)
         if(hashCheck){
             const hashNewPassword =  bcrypt.hashSync(req.body.newPassword, 10);
            const [data2] = await con.execute(`UPDATE users SET password= ${mysql.escape(hashNewPassword)}`);
-           console.log(data2)
            await con.end();
            if(data2.affectedRows > 0){
             return res.send({msg:'Password successfully changed'});
@@ -85,12 +80,12 @@ router.post('/changePassword', validation(changePassword), checkIfLoggedIn(), as
 router.get('/details', checkIfLoggedIn(), async(req,res)=>{
     try{
         const con = await mysql.createConnection(mysqlConfig);
-        const [data] = await con.execute(`SELECT  id, first_name, last_name, city, address,default_status, post_code, mobile FROM users_addresses WHERE user_id=${mysql.escape(req.user)}`)
+        const [data] = await con.execute(`SELECT  id, first_name, last_name, city, address, default_status, post_code, mobile FROM users_addresses WHERE user_id=${mysql.escape(req.user)}`)
         await con.end()
-        if(data.length === 0){
-            return res.status(500).send({err:'no data found'})
+        if(data.length > 0){
+            return res.send(data); 
         }
-        return res.send(data);
+        return res.send({err:'no data found'})
     }catch(err){
         console.log(err)
         res.send({err:'something wrong with the server. Please try again later'})
@@ -115,7 +110,7 @@ router.post('/details/defaultaddress', checkIfLoggedIn(), async(req,res)=>{
 router.delete('/deleteAddress/:id', checkIfLoggedIn(), async (req,res)=>{
     try{
         const con = await mysql.createConnection(mysqlConfig);
-        const [data] = await con.execute(`DELETE FROM users_addresses WHERE id=${mysql.escape(req.params.id)} AND user_id=${req.user}`);
+        const [data] = await con.execute(`DELETE FROM users_addresses WHERE id=${mysql.escape(Number(req.params.id))} AND user_id=${req.user}`);
         await con.end();
         if(data.affectedRows >0){
             return res.send({id: req.params.id});
@@ -128,9 +123,9 @@ router.delete('/deleteAddress/:id', checkIfLoggedIn(), async (req,res)=>{
 })
 
 
-//reikia backo validacijos. 
 router.post('/postAddress', checkIfLoggedIn(), async(req,res) =>{
     try{
+    
         const con = await mysql.createConnection(mysqlConfig);
         const [data] = await con.execute(`INSERT INTO users_addresses (user_id, first_name, last_name, mobile, address, city, post_code)
         VALUES(${mysql.escape(req.user)}, ${mysql.escape(req.body.first_name)}, ${mysql.escape(req.body.last_name)}, ${mysql.escape(req.body.mobile)}, ${mysql.escape(req.body.address)},${mysql.escape(req.body.city)}, ${mysql.escape(req.body.post_code)} )`);

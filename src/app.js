@@ -7,6 +7,7 @@ app.use(express.json());
 const productsRoute = require('./routes/v1/products');
 const cartRoute = require('./routes/v1/cart');
 const usersRoute = require('./routes/v1/users');
+const ordersRoute = require('./routes/v1/orders');
 
 app.get('/', (req,res) =>{
     res.send({msg:'server is running'});
@@ -15,6 +16,7 @@ app.get('/', (req,res) =>{
 app.use('/v1/products', productsRoute);
 app.use('/v1/cart', cartRoute);
 app.use('/v1/users', usersRoute);
+app.use('/v1/orders', ordersRoute)
 
 app.get('*', (req, res) =>{
     res.send({msg:'server is running'});

@@ -18,4 +18,5 @@ module.exports = {
         user: process.env.DB_USERNAME
     },
     jwtSecret: process.env.JWT_SECRET,
+    stripeSecret: process.env.STRIPE_END_POINT_SECRET,
 }
