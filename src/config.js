@@ -3,6 +3,7 @@ require('dotenv').config();
 module.exports = {
     port: process.env.PORT, 
     bucketName: process.env.BUCKET_NAME,
+    server_url: process.env.SERVER_URL,
     S3Config:{
         credentials:{
             accessKeyId: process.env.BUCKET_ACCESS_KEY,

@@ -42,17 +42,15 @@ router.post('/checkout', async(req,res)=>{
             VALUES(${mysql.escape(session.id)}, ${mysql.escape(userId)}, ${mysql.escape(session.amount_total)}, ${mysql.escape(delivery)}, ${mysql.escape(time)})`);
             products.forEach(async product => {
                return test = await con.execute(`INSERT INTO orderProducts (session_id, title, description, quantity, price, user_id)
-               VALUES(${mysql.escape(session.id)}, ${mysql.escape(product.title)}, ${mysql.escape(product.description)}, ${mysql.escape(product.quantity)}, ${mysql.escape(product.price)},${mysql.escape(userId)})`)
-               
+               VALUES(${mysql.escape(session.id)}, ${mysql.escape(product.title)}, ${mysql.escape(product.description)}, ${mysql.escape(product.quantity)}, ${mysql.escape(product.price)},${mysql.escape(userId)})`) 
            })
+           await con.end() 
            if(data.affectedRows){
             return res.send(session.url)
            } else{
             return res.status(500).send(session.cancel_url)
-           }
-           
+           } 
         }
-        
     }catch(err){
         console.log(err);
         res.status(500).send({err:'something wrong with the server. Please try again later'})
